@@ -4,6 +4,65 @@ import sectionproperties.pre.geometry as geometry
 import sectionproperties.pre.pre as pre
 from sectionproperties.pre.library.utils import draw_radius, rotate
 
+def bulb_section(
+    b: float,
+    t: float,
+    c: float,
+    d: float,
+    r: float,
+    n_r: int,
+    material: pre.Material = pre.DEFAULT_MATERIAL,
+) -> geometry.Geometry:
+    """Constructs a bulb section centered at the origin *(0, 0)*, with depth *d*, width *b*,
+    thickness *t* and root radius *r*, using *n_r* points to construct the root radius.
+    :param float b: Depth of the bulb section
+    :param float t: web thickness
+    :param float c: Bulb width
+    :param float d: Bulb thickness
+    :param float r: Bulb radius
+    :param int n_r: Number of points discretising the root radius
+    :param Optional[sectionproperties.pre.pre.Material]: Material to associate with this geometry
+    The following example creates a bulb section with a depth of 240, a width of 34, a
+    web thickness of 12 and a bulb radius of 16, using 16 points to discretise the radius. A mesh is
+    generated with a maximum triangular area of 5.0::
+        from sectionproperties.pre.library.steel_sections import  bulb_section
+        geometry = bulb_section(b=240, t=12, c=34, d=35.4, r=10, n_r=16)
+        geometry.create_mesh(mesh_sizes=[5.0])
+        geometry.plot_geometry()
+    ..  figure:: ../images/sections/cruciform_geometry.png
+        :align: center
+        :scale: 75 %
+        Cruciform section geometry.
+    ..  figure:: ../images/sections/cruciform_mesh.png
+        :align: center
+        :scale: 75 %
+    """
+    points = []
+
+    # add first two points
+    points.append([-t * 0.5, 0])
+    points.append([t * 0.5, 0])
+    points.append([t * 0.5, b-d])
+    
+    ptb=[c+t*0.5-r, b-r]
+    dzero=((c+t*0.5-r-t *0.5)**2+(b-r-b+d)**2)**0.5
+    #build radius 
+    """
+    to be update to include small radius on all sharp edge
+    to be update for tangence of the oblic line :
+    points.append([(r**2)/(dzero**2)*(t * 0.5)+r/(dzero**2)*((dzero**2)-(r**2))**0.5*(d-b),
+                  r**2/dzero**2*(b-d)+r/dzero**2*(dzero**2-r**2)**0.5*(t*0.5)])
+    points.append([(r**2)/(dzero**2)*(t * 0.5)-r/(dzero**2)*((dzero**2)-(r**2))**0.5*(d-b),
+                  r**2/dzero**2*(b-d)-r/dzero**2*(dzero**2-r**2)**0.5*(t*0.5)])"""
+    points += draw_radius(ptb, r, -np.pi*0.5, n_r, True)
+    points += draw_radius(ptb, r, 0, n_r, True)
+    #build the top part
+    points.append([c + t * 0.5 - r , b])
+    points.append([-t * 0.5, b])
+
+    polygon = Polygon(points)
+    return geometry.Geometry(polygon, material)
+
 
 def circular_hollow_section(
     d: float, t: float, n: int, material: pre.Material = pre.DEFAULT_MATERIAL
